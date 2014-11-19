@@ -6,10 +6,6 @@ import Prelude hiding (head, tail)
 
 data Stack a = Nil | Cons a (Stack a) deriving (Eq, Show)
 
-instance Functor Stack where
-  fmap _ Nil = Nil
-  fmap f (Cons h t) = Cons (f h) (fmap f t)
-
 isEmpty :: Stack a -> Bool
 isEmpty Nil = True
 isEmpty _   = False
@@ -35,14 +31,11 @@ toList :: Stack a -> [a]
 toList Nil = []
 toList (Cons h t) = h : toList t
 
-append :: Stack a -> Maybe (Stack a) -> Maybe (Stack a)
-append xs ys
-  | isEmpty xs = ys
-  | otherwise  = do
-      h   <- head xs
-      txs <- tail xs
-      t   <- append txs ys
-      return (cons h t)
+append :: Stack a -> Stack a -> Stack a
+append Nil ys        = ys
+append (Cons h t) ys =
+  let txs = append t ys
+  in  cons h txs
 
 update :: Stack a -> Int -> a -> Maybe (Stack a)
 update Nil _ _ = Nothing
