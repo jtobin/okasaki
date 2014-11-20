@@ -55,7 +55,7 @@ fromList = foldr insert empty
 
 -- exercise 3.2 (define insert directly rather than by merge)
 altInsert :: Ord a => a -> Heap a -> Heap a
-altInsert e  Leaf            = singleton e
+altInsert e  Leaf = singleton e
 altInsert e0 (Node _ e1 l r)
     | rank l0 >= rank r0 = Node (succ (rank r0)) top l0 r0
     | otherwise          = Node (succ (rank l0)) top r0 l0
