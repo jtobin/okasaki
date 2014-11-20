@@ -56,16 +56,15 @@ fromList = foldr insert empty
 -- exercise 3.2 (define insert directly rather than by merge)
 altInsert :: Ord a => a -> Heap a -> Heap a
 altInsert e  Leaf            = singleton e
-altInsert e0 (Node _ e1 l r) = create top l0 r0 where
-  (l0, r0) = cascadeInsert bottom (l, r)
-  (top, bottom)
+altInsert e0 (Node _ e1 l r) = create upper l0 r0 where
+  (l0, r0) = cascadeInsert (l, r)
+  (upper, lower)
     | e0 <= e1  = (e0, e1)
     | otherwise = (e1, e0)
 
-cascadeInsert :: Ord a => a -> (Heap a, Heap a) -> (Heap a, Heap a)
-cascadeInsert e (h, Leaf) = (h, singleton e)
-cascadeInsert e (Leaf, h) = (h, singleton e)
-cascadeInsert e hs@(Node _ e0 _ _, Node _ e1 _ _)
-  | e0 > e1   = first  (altInsert e) hs
-  | otherwise = second (altInsert e) hs
+  cascadeInsert (h, Leaf) = (h, singleton lower)
+  cascadeInsert (Leaf, h) = (h, singleton lower)
+  cascadeInsert hs@(Node _ x _ _, Node _ y _ _)
+    | x > y     = first  (altInsert lower) hs
+    | otherwise = second (altInsert lower) hs
 
