@@ -85,5 +85,3 @@ altFromList es
     wrapup [z] = z
     wrapup zs  = wrapup (foldup zs)
 
-
-
