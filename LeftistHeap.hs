@@ -68,3 +68,22 @@ altInsert e0 (Node _ e1 l r) = create upper l0 r0 where
     | x > y     = first  (altInsert lower) hs
     | otherwise = second (altInsert lower) hs
 
+-- exercise 3.3 (implement alternate fromList)
+-- - foldup halves list length on each pass, log n foldups
+altFromList :: Ord a => [a] -> Heap a
+altFromList [] = Leaf
+altFromList es
+    | even (length xs) = merge x (wrapup xs)
+    | otherwise        = wrapup (x:xs)
+  where
+    (x:xs) = fmap singleton es
+
+    foldup []     = []
+    foldup (_:[]) = []
+    foldup (z0:z1:zs) = merge z0 z1 : foldup zs
+
+    wrapup [z] = z
+    wrapup zs  = wrapup (foldup zs)
+
+
+
