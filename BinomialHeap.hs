@@ -2,9 +2,15 @@
 
 module BinomialHeap where
 
-data Tree a = Node Int a [Tree a]
+data Tree a = Node Int a [Tree a] deriving Show
 
 type Heap a = [Tree a]
+
+empty :: Heap a
+empty = []
+
+isEmpty :: Heap a -> Bool
+isEmpty = null
 
 link :: Ord a => Tree a -> Tree a -> Tree a
 link t0@(Node r x0 c0) t1@(Node _ x1 c1)
@@ -53,4 +59,63 @@ deleteMin :: Ord a => Heap a -> Heap a
 deleteMin ts = case removeMinTree ts of
   Nothing                  -> []
   Just (Node _ _ ts0, ts1) -> merge (reverse ts0) ts1
+
+fromList :: Ord a => [a] -> Heap a
+fromList = foldr insert empty
+
+-- exercise 3.5 (findMin without call to removeMinTree)
+altFindMin :: Ord a => Heap a -> Maybe a
+altFindMin []     = Nothing
+altFindMin [t]    = return $ root t
+altFindMin (Node _ e _:ts) = do
+  alt <- altFindMin ts
+  return $
+    if   e < alt
+    then e
+    else alt
+
+-- exercise 3.7 (O(1) min in ocaml functor style)
+class Heaplike h where
+  hEmpty     :: h a
+  hIsEmpty   :: h a -> Bool
+  hInsert    :: Ord a => a -> h a -> h a
+  hFindMin   :: Ord a => h a -> Maybe a
+  hDeleteMin :: Ord a => h a -> h a
+
+  hFromList :: Ord a => [a] -> h a
+  hFromList = foldr hInsert hEmpty
+
+data ExplicitMinHeap h a = E | NE a (h a) deriving Show
+
+instance Heaplike h => Heaplike (ExplicitMinHeap h) where
+  hEmpty = E
+
+  hIsEmpty E = True
+  hIsEmpty _ = False
+
+  hInsert e E = NE e (hInsert e hEmpty)
+  hInsert e (NE m h) = NE (min e m) (hInsert e h)
+
+  hFindMin E = Nothing
+  hFindMin (NE m _) = Just m
+
+  hDeleteMin E = hEmpty
+  hDeleteMin (NE m0 h) =
+    let smaller = hDeleteMin h
+    in  case hFindMin smaller of
+          Nothing -> NE m0 smaller
+          Just m1 -> NE (min m0 m1) smaller
+
+-- example
+newtype BinomialHeap a = BinomialHeap { unwrap :: Heap a } deriving Show
+
+instance Heaplike BinomialHeap where
+  hEmpty   = BinomialHeap empty
+  hIsEmpty = isEmpty . unwrap
+  hInsert e (BinomialHeap h)  = BinomialHeap $ insert e h
+  hFindMin (BinomialHeap h)   = findMin h
+  hDeleteMin (BinomialHeap h) = BinomialHeap $ deleteMin h
+
+altFromList :: Ord a => [a] -> ExplicitMinHeap BinomialHeap a
+altFromList = hFromList
 

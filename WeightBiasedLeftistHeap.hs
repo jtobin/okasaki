@@ -41,6 +41,14 @@ singleton e = Node e Leaf Leaf
 insert :: Ord a => a -> Heap a -> Heap a
 insert e = merge (singleton e)
 
+findMin :: Heap a -> Maybe a
+findMin Leaf = Nothing
+findMin (Node e _ _) = return e
+
+deleteMin :: Ord a => Heap a -> Heap a
+deleteMin Leaf = Leaf
+deleteMin (Node _ l r) = merge l r
+
 fromList :: Ord a => [a] -> Heap a
 fromList = foldr insert empty
 
@@ -58,6 +66,6 @@ altMerge h0@(Node e0 l0 r0) h1@(Node e1 l1 r1) = Node e l r where
     | otherwise                   = second (`altMerge` h) branches
 
 -- exercise 3.4d (advantages of altMerge)
--- - lazy environment ?
--- - concurrent environment ?
+-- - lazy environment (no buildup of thunks?)
+-- - concurrent environment (more opportunity for concurrency?)
 
