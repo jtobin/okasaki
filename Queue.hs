@@ -32,3 +32,6 @@ tail :: Queue a -> Queue a
 tail (Queue (_:t) r) = checkf (Queue t r)
 tail q = q
 
+test :: Queue Int
+test = Queue [1,2,3] [6,5,4]
+
