@@ -22,19 +22,8 @@ leaf = Fix LeafF
 node :: a -> Tree a -> Tree a -> Tree a
 node x l r = Fix (NodeF l x r)
 
--- insert :: forall a. Ord a => a -> Tree a -> Tree a
--- insert x = apo coalg where
---   coalg :: Ord a => Tree a -> TreeF a (Either (Tree a) (Tree a))
---   coalg input = case unfix input of
---     LeafF       -> NodeF (Left leaf) x (Left leaf)
---     NodeF l e r -> case compare x e of
---       EQ -> NodeF (Left l) e (Left r)
---       LT -> NodeF (Right l) e (Left r)
---       GT -> NodeF (Left l) e (Right r)
-
-insert :: forall a. Ord a => a -> Tree a -> Tree a
+insert :: Ord a => a -> Tree a -> Tree a
 insert x = apo coalg where
-  coalg :: (Ord b, b ~ a) => Tree b -> TreeF a (Either (Tree b) (Tree b))
   coalg input = case unfix input of
     LeafF       -> NodeF (Left leaf) x (Left leaf)
     NodeF l e r -> case compare x e of
