@@ -29,9 +29,9 @@ push :: a -> Stack a -> Stack a
 push h t = Fix (ConsF h t)
 
 pop :: Stack a -> Maybe (a, Stack a)
-pop s = case s of
-  Fix NilF        -> Nothing
-  Fix (ConsF h t) -> Just (h, t)
+pop s = case project s of
+  NilF      -> Nothing
+  ConsF h t -> Just (h, t)
 
 fromList :: [a] -> Stack a
 fromList = ana coalg where
@@ -41,14 +41,14 @@ fromList = ana coalg where
 
 toList :: Stack a -> [a]
 toList = ana coalg where
-  coalg = \case
-    Fix NilF        -> Nil
-    Fix (ConsF h t) -> Cons h t
+  coalg s = case project s of
+    NilF      -> Nil
+    ConsF h t -> Cons h t
 
 isEmpty :: Stack a -> Bool
-isEmpty = \case
-  Fix NilF -> True
-  _        -> False
+isEmpty s = case project s of
+  NilF -> True
+  _    -> False
 
 cat :: Stack a -> Stack a -> Stack a
 cat l r = apo coalg (project l) where
