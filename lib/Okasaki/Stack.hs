@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -fno-warn-unused-top-binds #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -7,7 +7,20 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module StackRS where
+module Okasaki.Stack (
+    StackF(..)
+  , Stack
+  , empty
+  , push
+  , pop
+
+  , fromList
+  , toList
+  , isEmpty
+  , cat
+  , update
+  , suffixes
+  ) where
 
 import Prelude hiding (head, tail)
 import Data.Functor.Foldable as RS
@@ -15,7 +28,7 @@ import Text.Show.Deriving
 
 data StackF a r =
     NilF
-  | ConsF a r
+  | ConsF !a r
   deriving (Eq, Functor, Foldable, Traversable, Show)
 
 $(deriveShow1 ''StackF)

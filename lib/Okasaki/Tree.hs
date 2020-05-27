@@ -1,8 +1,20 @@
+{-# OPTIONS_GHC -Wall -fno-warn-unused-top-binds #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+
+module Okasaki.Tree (
+    TreeF(..)
+  , Tree
+  , leaf
+  , node
+
+  , insert
+  , member
+  , fromList
+  ) where
 
 import Data.Functor.Foldable
 import Text.Show.Deriving
