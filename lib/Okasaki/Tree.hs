@@ -16,6 +16,7 @@ module Okasaki.Tree (
   , fromList
   ) where
 
+import Data.Fix (Fix(..), unFix)
 import Data.Functor.Foldable
 import Text.Show.Deriving
 
@@ -36,7 +37,7 @@ node x l r = Fix (NodeF l x r)
 
 insert :: Ord a => a -> Tree a -> Tree a
 insert x = apo coalg where
-  coalg input = case unfix input of
+  coalg input = case unFix input of
     LeafF       -> NodeF (Left leaf) x (Left leaf)
     NodeF l e r -> case compare x e of
       EQ -> NodeF (Left l) e (Left r)

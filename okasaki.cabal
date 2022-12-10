@@ -17,6 +17,7 @@ library
     , Okasaki.Tree
   build-depends:
       base
+    , data-fix
     , deriving-compat
     , recursion-schemes
 

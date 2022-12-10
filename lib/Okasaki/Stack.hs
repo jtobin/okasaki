@@ -23,6 +23,7 @@ module Okasaki.Stack (
   ) where
 
 import Prelude hiding (head, tail)
+import Data.Fix (Fix(..))
 import Data.Functor.Foldable as RS
 import Text.Show.Deriving
 
