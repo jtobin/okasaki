@@ -54,8 +54,8 @@ nod x l r = Fix (nodF x l r)
 sin :: a -> Tree a
 sin x = nod x lef lef
 
-empty :: Tree a -> Bool
-empty (project -> TreeF c) = c True b where
+non :: Tree a -> Bool
+non (project -> TreeF c) = c True b where
   b _ _ _ = False
 
 -- exercise 2.3 (no unnecessary copying) (?)

@@ -23,6 +23,7 @@ module Okasaki.Stack (
   ) where
 
 import Prelude hiding (map)
+import Data.Eq.Deriving (deriveEq1)
 import Data.Fix (Fix(..))
 import Data.Functor.Foldable as RS
 import Text.Show.Deriving
@@ -33,6 +34,7 @@ data StackF a r =
   deriving (Eq, Functor, Foldable, Traversable, Show)
 
 $(deriveShow1 ''StackF)
+$(deriveEq1 ''StackF)
 
 type Stack a = Fix (StackF a)
 
@@ -86,7 +88,7 @@ non s = case project s of
 cat :: Stack a -> Stack a -> Stack a
 cat l r = apo lag (project l) where
   lag = \case
-    NilF      -> fmap Left (project r)
+    NilF -> fmap Left (project r)
     ConsF h t -> case project t of
       NilF -> ConsF h (Left r)
       rest -> ConsF h (Right rest)
@@ -95,11 +97,10 @@ cat l r = apo lag (project l) where
 jab :: Int -> a -> Stack a -> Stack a
 jab n x s = apo lag (n, s) where
   lag (j, tac) = case project tac of
-    NilF      -> NilF
-    ConsF h t ->
-      if   j <= 0
-      then ConsF x (Left t)
-      else ConsF h (Right (pred j, t))
+    NilF -> NilF
+    ConsF h t
+      | j <= 0    -> ConsF x (Left t)
+      | otherwise -> ConsF h (Right (pred j, t))
 
 -- exercise 2.1
 

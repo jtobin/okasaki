@@ -20,7 +20,6 @@ module Okasaki.Tree (
 import Data.Eq.Deriving (deriveEq1)
 import Data.Fix hiding (cata, ana, hylo)
 import Data.Functor.Foldable
-import Data.Maybe (fromMaybe)
 import Data.Monoid
 import Okasaki.Orphans ()
 import qualified Okasaki.Tree.CPS as CPS
