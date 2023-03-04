@@ -71,42 +71,6 @@ haz x t = case getLast (rec t) of
         | x < e     -> l
         | otherwise -> Last (Just e) <> r
 
--- exercise 2.3 (no unnecessary copying)
-
--- NB a moment's thought implies this is max d + 1 comparisons already
-
-pat :: Ord a => a -> Tree a -> Tree a
-pat x t = case project t of
-    LeafF       -> nod x lef lef
-    NodeF _ e _ -> rub e id t
-  where
-    rub v k s = case project s of
-      LeafF
-        | v == x    -> s
-        | otherwise -> k (nod x lef lef)
-
-      NodeF l e r
-        | x < e     -> rub v (\a -> k (nod e a r)) l
-        | otherwise -> rub e (\a -> k (nod e l a)) r
-
--- exercise 2.4 (no unnecessary copying, max d + 1 comparisons)
---
--- same question as 2.3
-
-pet :: Ord a => a -> Tree a -> Tree a
-pet x t = fromMaybe t (go t Nothing) where
-  go s acc = case project s of
-    NodeF l e r ->
-      if   x < e
-      then fmap (\a -> embed (NodeF a e r)) (go l acc)
-      else fmap (\a -> embed (NodeF l e a)) (go r (pure e))
-    LeafF -> case acc of
-      Nothing -> pure (sin x)
-      Just e ->
-        if   e == x
-        then Nothing
-        else pure (sin x)
-
 -- exercise 2.5a (construct balanced binary trees of depth n)
 dap :: Ord a => a -> Int -> Tree a
 dap x n = ana lag (n, lef) where
