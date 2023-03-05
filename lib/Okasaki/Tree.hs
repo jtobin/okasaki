@@ -12,8 +12,15 @@ module Okasaki.Tree (
   , lef
   , nod
 
+  , spy
+
   , put
+  , pat
+  , rub
+
   , has
+  , haz
+
   , gas
   ) where
 
@@ -23,12 +30,11 @@ import Data.Functor.Foldable
 import Data.Monoid
 import Okasaki.Orphans ()
 import qualified Okasaki.Tree.CPS as CPS
-import Prelude hiding (sin)
 import Text.Show.Deriving
 
 data TreeF a r =
     LeafF
-  | NodeF r a r
+  | NodeF r !a r
   deriving (Functor, Show)
 
 $(deriveShow1 ''TreeF)
@@ -42,13 +48,10 @@ lef = Fix LeafF
 nod :: a -> Tree a -> Tree a -> Tree a
 nod x l r = Fix (NodeF l x r)
 
-sin :: a -> Tree a
-sin x = nod x lef lef
-
 put :: Ord a => a -> Tree a -> Tree a
 put x = apo lag where
   lag pin = case project pin of
-    LeafF       -> NodeF (Left lef) x (Left lef)
+    LeafF -> NodeF (Left lef) x (Left lef)
     NodeF l e r -> case compare x e of
       EQ -> NodeF (Left l) e (Left r)
       LT -> NodeF (Right l) e (Left r)
@@ -58,17 +61,43 @@ put x = apo lag where
 --     figure out the speed/memory profiles compared to the standard
 --     versions
 
+spy :: Ord a => a -> Tree a -> Maybe a
+spy x t = getLast (cata alg t) where
+  alg = \case
+    LeafF -> mempty
+    NodeF l e r
+      | x < e     -> l
+      | otherwise -> Last (Just e) <> r
+
 -- exercise 2.2 (max d + 1 comparisons)
 haz :: Ord a => a -> Tree a -> Bool
-haz x t = case getLast (rec t) of
-    Nothing -> False
-    Just s  -> s == x
-  where
-    rec = cata $ \case
-      LeafF -> mempty
-      NodeF l e r
-        | x < e     -> l
-        | otherwise -> Last (Just e) <> r
+haz x t = case spy x t of
+  Nothing -> False
+  Just s  -> s == x
+
+-- exercise 2.3 (no unnecessary copying)
+pat :: Ord a => a -> Tree a -> Tree a
+pat x t = tug id t where
+  tug k s = case project s of
+    LeafF -> k (nod x lef lef)
+    NodeF l e r -> case compare x e of
+      EQ -> t
+      LT -> tug (\a -> k (nod e a r)) l
+      GT -> tug (\a -> k (nod e l a)) r
+
+-- exercise 2.4 (no unnecessary copying, max d + 1 comparisons)
+rub :: Ord a => a -> Tree a -> Tree a
+rub x t = tug Nothing id t where
+  tug c k s = case project s of
+    LeafF -> case c of
+      Nothing -> k (nod x lef lef)
+      Just a
+        | a == x    -> t
+        | otherwise -> k (nod x lef lef)
+
+    NodeF l e r
+      | x < e     -> tug c (\a -> k (nod e a r)) l
+      | otherwise -> tug (pure e) (\a -> k (nod e l a)) r
 
 -- exercise 2.5a (construct balanced binary trees of depth n)
 dap :: Ord a => a -> Int -> Tree a

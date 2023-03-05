@@ -15,7 +15,8 @@ library
   other-modules:
       Okasaki.Orphans
   exposed-modules:
-      Okasaki.Stack
+      Okasaki.Map
+    , Okasaki.Stack
     , Okasaki.Tree
     , Okasaki.Tree.CPS
   build-depends:

@@ -13,6 +13,8 @@ module Okasaki.Tree.CPS (
   , nod
   , nodF
 
+  , spy
+
   , put
   , pet
   , has
@@ -29,7 +31,6 @@ module Okasaki.Tree.CPS (
   ) where
 
 import Data.Fix hiding (cata, ana, hylo)
-import Prelude hiding (sin)
 import Data.Functor.Foldable
 import Data.Monoid
 import Okasaki.Orphans ()
@@ -51,14 +52,11 @@ lef = Fix lefF
 nod :: a -> Tree a -> Tree a -> Tree a
 nod x l r = Fix (nodF x l r)
 
-sin :: a -> Tree a
-sin x = nod x lef lef
-
 non :: Tree a -> Bool
 non (project -> TreeF c) = c True b where
   b _ _ _ = False
 
--- exercise 2.3 (no unnecessary copying) (?)
+-- exercise 2.3 (no unnecessary copying)
 put :: Ord a => a -> Tree a -> Tree a
 put x = apo lag where
   lag (project -> TreeF c) = c a b
@@ -79,17 +77,19 @@ has x = cata alg where
     LT -> l
     GT -> r
 
+spy :: Ord a => a -> Tree a -> Last a
+spy x = cata alg where
+  alg (TreeF c) = c mempty b
+
+  b l e r
+    | x < e     = l
+    | otherwise = Last (Just e) <> r
+
 -- exercise 2.2 (max d + 1 comparisons)
 haz :: Ord a => a -> Tree a -> Bool
-haz x t = case getLast (cata alg t) of
-    Nothing -> False
-    Just s  -> s == x
-  where
-    alg (TreeF c) = c mempty b
-
-    b l e r
-      | x < e     = l
-      | otherwise = Last (Just e) <> r
+haz x t = case getLast (spy x t) of
+  Nothing -> False
+  Just s  -> s == x
 
 -- exercise 2.4 (no unnecessary copying, max d + 1 comparisons)
 pet :: Ord a => a -> Tree a -> Tree a
@@ -114,6 +114,7 @@ dap x n = ana lag (n, lef) where
     | otherwise =
         let s = (pred j, t)
         in  nodF x s s
+
 -- exercise 2.5b (construct mostly-balanced binary trees of size n)
 sap :: Ord a => a -> Int -> Tree a
 sap x n = ana lag (n, lef) where
