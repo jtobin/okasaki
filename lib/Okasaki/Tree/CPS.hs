@@ -1,9 +1,4 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-top-binds #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Okasaki.Tree.CPS (
     TreeF(..)

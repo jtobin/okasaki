@@ -62,7 +62,7 @@ put x = apo lag where
 --     versions
 
 spy :: Ord a => a -> Tree a -> Maybe a
-spy x t = getLast (cata alg t) where
+spy x = getLast . cata alg where
   alg = \case
     LeafF -> mempty
     NodeF l e r
