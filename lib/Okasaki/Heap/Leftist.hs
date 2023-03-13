@@ -22,6 +22,20 @@ import Data.Monoid
 import Okasaki.Orphans ()
 import Text.Show.Deriving
 
+-- NB todo
+--
+--    * verify heap property throughout
+--    * verify leftist property
+--    * implement weight-biased variant
+
+-- exercise 3.1: prove right spine contains at most floor(log(n + 1)) elements
+--
+-- * observe that rightmost-weighted binary tree satisfying leftist property
+--   is balanced
+-- * observe that right spine length is maximized in balanced case
+-- * observe that tree has depth floor(log(n + 1)) in balanced case.
+-- * therefore, right spine has at most floor(log(n + 1)) elements. (QED)
+
 data HeapF a r =
     LeafF
   | NodeF !Int !a r r
@@ -31,14 +45,6 @@ $(deriveShow1 ''HeapF)
 $(deriveEq1 ''HeapF)
 
 type Heap a = Fix (HeapF a)
-
-data BinF a r =
-    EmpF
-  | SinF !a
-  | BinF r r
-  deriving (Eq, Functor, Foldable, Traversable, Show)
-
-type Bin a = Fix (BinF a)
 
 lef :: Heap a
 lef = Fix LeafF
@@ -66,12 +72,34 @@ mix l r = apo lag (l, r) where
 sor :: Heap a -> Heap a
 sor = cata $ \case
   LeafF -> lef
-  NodeF _ m l r
-    | ran l >= ran r -> Fix (NodeF (succ (ran r)) m l r)
-    | otherwise      -> Fix (NodeF (succ (ran l)) m r l)
+  NodeF _ m l r -> set m l r
+
+set :: a -> Heap a -> Heap a -> Heap a
+set m l r
+  | ran l >= ran r = Fix (NodeF (succ (ran r)) m l r)
+  | otherwise      = Fix (NodeF (succ (ran l)) m r l)
 
 put :: Ord a => a -> Heap a -> Heap a
 put x = mer (one x)
+
+-- exercise 3.2: direct insert
+pat :: Ord a => a -> Heap a -> Heap a
+pat x h = case project h of
+    LeafF -> one x
+    NodeF _ m a b ->
+      let (u, l)
+            | x <= m    = (x, m)
+            | otherwise = (m, x)
+
+      in  uncurry (set u) (pot l a b)
+  where
+    pot :: Ord a => a -> Heap a -> Heap a -> (Heap a, Heap a)
+    pot l a b = case (project a, project b) of
+      (_, LeafF) -> (a, one l)
+      (LeafF, _) -> (b, one l)
+      (NodeF _ c _ _, NodeF _ d _ _)
+        | c > d     -> (pat l a, b)
+        | otherwise -> (a, pat l b)
 
 bot :: Heap a -> Maybe a
 bot h = case project h of
@@ -84,9 +112,12 @@ cut h = case project h of
   NodeF _ _ l r -> mer l r
 
 -- exercise 3.3: hylo gas
---
--- NB * characterise worst-case performance formally
---    * constructed heap differs from foldr'd put; confirm this is ok
+data BinF a r =
+    EmpF
+  | SinF !a
+  | BinF r r
+  deriving (Eq, Functor, Foldable, Traversable, Show)
+
 gas :: Ord a => [a] -> Heap a
 gas = hylo alg lag where
   lag s = case project s of
