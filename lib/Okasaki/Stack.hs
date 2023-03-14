@@ -22,6 +22,8 @@ import Data.Fix (Fix(..))
 import Data.Functor.Foldable as RS
 import Text.Show.Deriving
 
+-- NB should arguably be made strict
+
 data StackF a r =
     NilF
   | ConsF !a r

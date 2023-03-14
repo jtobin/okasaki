@@ -130,13 +130,13 @@ dep :: Integral b => Tree a -> b
 dep = getSum . cata alg where
   alg = \case
     LeafF       -> mempty
-    NodeF l _ r -> Sum 1 <> max l r
+    NodeF l _ r -> 1 <> max l r
 
 wyt :: Integral b => Tree a -> b
 wyt = getSum . cata alg where
   alg = \case
     LeafF       -> mempty
-    NodeF l _ r -> Sum 1 <> l <> r
+    NodeF l _ r -> 1 <> l <> r
 
 has :: Ord a => a -> Tree a -> Bool
 has x = cata $ \case

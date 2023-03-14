@@ -11,6 +11,9 @@ module Okasaki.Heap.Leftist.Weighted (
   , bot
   , cut
 
+  , siz
+  , wyt
+
   , oil
   , gas
   ) where
@@ -43,16 +46,30 @@ lef = Fix LeafF
 one :: a -> Heap a
 one x = Fix (NodeF 1 x lef lef)
 
+siz :: Heap a -> Sum Int
+siz h = case project h of
+  LeafF -> 0
+  NodeF r _ _ _ -> r
+
+wyt :: Heap a -> Sum Int
+wyt = cata $ \case
+  LeafF         -> 0
+  NodeF _ _ l r -> 1 <> l <> r
+
 mer :: Ord a => Heap a -> Heap a -> Heap a
 mer l r = apo lag (l, r) where
   lag (a, b) = case (project a, project b) of
     (c, LeafF) -> fmap Left c
     (LeafF, d) -> fmap Left d
     (NodeF p m c d, NodeF q n e f)
-      | m <= n && p >= q -> NodeF (p <> q) m (Left c) (Right (d, b))
-      | m <= n && p < q  -> NodeF (p <> q) m (Right (d, b)) (Left c)
-      | m > n && p >= q  -> NodeF (p <> q) n (Left e) (Right (a, f))
-      | otherwise        -> NodeF (p <> q) n (Right (a, f)) (Left e)
+      | m <= n && wyt c >= (wyt b <> wyt d) ->
+          NodeF (p <> q) m (Left c) (Right (d, b))
+      | m <= n ->
+          NodeF (p <> q) m (Right (d, b)) (Left c)
+      | m > n && wyt e >= (wyt a <> wyt f) ->
+          NodeF (p <> q) n (Left e) (Right (a, f))
+      | otherwise ->
+          NodeF (p <> q) n (Right (a, f)) (Left e)
 
 put :: Ord a => a -> Heap a -> Heap a
 put x = mer (one x)

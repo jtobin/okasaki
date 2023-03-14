@@ -8,8 +8,13 @@ module Okasaki.Heap.Leftist (
   , lef
   , one
   , put
+  , pat
   , bot
   , cut
+
+  , sor
+  , set
+  , ran
 
   , oil
   , gas

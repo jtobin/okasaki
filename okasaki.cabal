@@ -27,6 +27,7 @@ library
       Okasaki.Heap.Leftist
     , Okasaki.Heap.Leftist.Weighted
     , Okasaki.Map
+    , Okasaki.Stack
     , Okasaki.Stack.CPS
     , Okasaki.Tree
     , Okasaki.Tree.CPS
@@ -36,3 +37,19 @@ library
     , deriving-compat
     , recursion-schemes
 
+Test-suite tests
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  other-modules:
+     Heap.Leftist
+   , Heap.Weighted
+  ghc-options:
+    -rtsopts -Wall
+  build-depends:
+      base
+    , data-fix
+    , okasaki
+    , QuickCheck
+    , recursion-schemes

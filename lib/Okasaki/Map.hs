@@ -1,6 +1,4 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-top-binds #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Okasaki.Map (
