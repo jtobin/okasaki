@@ -25,6 +25,7 @@ library
     Okasaki.Orphans
   exposed-modules:
       Okasaki.Heap.Leftist
+    , Okasaki.Heap.Leftist.Weighted
     , Okasaki.Map
     , Okasaki.Stack.CPS
     , Okasaki.Tree

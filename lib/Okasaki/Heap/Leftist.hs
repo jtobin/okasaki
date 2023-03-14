@@ -22,23 +22,21 @@ import Data.Monoid
 import Okasaki.Orphans ()
 import Text.Show.Deriving
 
--- NB todo
+-- NB arguably better to use induction
 --
---    * verify heap property throughout
---    * verify leftist property
---    * implement weight-biased variant
-
--- exercise 3.1: prove right spine contains at most floor(log(n + 1)) elements
+-- exercise 3.1: prove right spine contains at most floor(log(n + 1))
+--               elements
 --
--- * observe that rightmost-weighted binary tree satisfying leftist property
---   is balanced
+-- * observe that rightmost-weighted binary tree satisfying leftist
+--   property is balanced
 -- * observe that right spine length is maximized in balanced case
 -- * observe that tree has depth floor(log(n + 1)) in balanced case.
--- * therefore, right spine has at most floor(log(n + 1)) elements. (QED)
+-- * therefore, right spine has at most floor(log(n + 1)) elements.
+--   (QED)
 
 data HeapF a r =
     LeafF
-  | NodeF !Int !a r r
+  | NodeF !(Sum Int) !a r r
   deriving (Eq, Functor, Foldable, Traversable, Show)
 
 $(deriveShow1 ''HeapF)
@@ -52,7 +50,7 @@ lef = Fix LeafF
 one :: a -> Heap a
 one x = Fix (NodeF 1 x lef lef)
 
-ran :: Heap a -> Int
+ran :: Heap a -> Sum Int
 ran h = case project h of
   LeafF -> 0
   NodeF r _ _ _ -> r
@@ -66,8 +64,8 @@ mix l r = apo lag (l, r) where
     (c, LeafF) -> fmap Left c
     (LeafF, d) -> fmap Left d
     (NodeF _ m c d, NodeF _ n e f)
-      | m <= n    -> NodeF 0 m (Left c) (Right (d, b))
-      | otherwise -> NodeF 0 n (Left e) (Right (a, f))
+      | m <= n    -> NodeF (ran d <> ran b) m (Left c) (Right (d, b))
+      | otherwise -> NodeF (ran a <> ran f) n (Left e) (Right (a, f))
 
 sor :: Heap a -> Heap a
 sor = cata $ \case
@@ -76,8 +74,8 @@ sor = cata $ \case
 
 set :: a -> Heap a -> Heap a -> Heap a
 set m l r
-  | ran l >= ran r = Fix (NodeF (succ (ran r)) m l r)
-  | otherwise      = Fix (NodeF (succ (ran l)) m r l)
+  | ran l >= ran r = Fix (NodeF (1 <> ran r) m l r)
+  | otherwise      = Fix (NodeF (1 <> ran l) m r l)
 
 put :: Ord a => a -> Heap a -> Heap a
 put x = mer (one x)
@@ -116,7 +114,7 @@ data BinF a r =
     EmpF
   | SinF !a
   | BinF r r
-  deriving (Eq, Functor, Foldable, Traversable, Show)
+  deriving Functor
 
 gas :: Ord a => [a] -> Heap a
 gas = hylo alg lag where
@@ -132,25 +130,12 @@ gas = hylo alg lag where
     SinF a   -> one a
     BinF l r -> mer l r
 
-spy :: Ord a => a -> Heap a -> Maybe a
-spy x = getLast . cata alg where
-  alg = \case
-    LeafF -> mempty
-    NodeF _ e l r
-      | x < e     -> l
-      | otherwise -> Last (Just e) <> r
-
-haz :: Ord a => a -> Heap a -> Bool
-haz x t = case spy x t of
-  Nothing -> False
-  Just s  -> s == x
-
 -- reference
 
 nodF :: a -> Heap a -> Heap a -> HeapF a (Heap a)
 nodF x l r
-  | ran l >= ran r = NodeF (succ (ran r)) x l r
-  | otherwise      = NodeF (succ (ran l)) x r l
+  | ran l >= ran r = NodeF (1 <> ran r) x l r
+  | otherwise      = NodeF (1 <> ran l) x r l
 
 nod :: a -> Heap a -> Heap a -> Heap a
 nod x l r = Fix (nodF x l r)
