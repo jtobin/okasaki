@@ -59,7 +59,7 @@ use a h = case a of
 
 hep :: (Ord k, Arbitrary k) => Gen (H.Heap k)
 hep = do
-  num  <- choose (0, 10)
+  num  <- choose (0, 1000)
   acts <- replicateM num act
   foldM (flip use) H.lef acts
 
