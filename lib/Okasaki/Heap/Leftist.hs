@@ -11,6 +11,7 @@ module Okasaki.Heap.Leftist (
   , pat
   , bot
   , cut
+  , wyt
 
   , sor
   , set
@@ -134,6 +135,12 @@ gas = hylo alg lag where
     EmpF     -> lef
     SinF a   -> one a
     BinF l r -> mer l r
+
+wyt :: Heap a -> Int
+wyt = getSum . cata alg where
+  alg = \case
+    LeafF -> 0
+    NodeF _ _ l r -> 1 <> l <> r
 
 -- reference
 

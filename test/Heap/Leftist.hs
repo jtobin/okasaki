@@ -4,6 +4,7 @@ module Heap.Leftist (
     decorated
   , leftist
   , heap
+  , size
 
   , tests
   ) where
@@ -21,13 +22,21 @@ tests = [
     testProperty "decorations accurate" decorated
   , testProperty "leftist property invariant" leftist
   , testProperty "heap order invariant" heap
+  , testProperty "correct right-spine length" size
   ]
 
+spi :: H.Heap a -> Int
+spi = cata $ \case
+  H.LeafF         -> 0
+  H.NodeF _ _ _ r -> succ r
+
+mos :: H.Heap a -> Bool
+mos h =
+  let n = H.wyt h
+  in  spi h <= floor (logBase 2 ((fromIntegral (succ n)) :: Double))
+
 dec :: H.Heap a -> Bool
-dec h = getSum (H.ran h) == cata alg h where
-  alg = \case
-    H.LeafF         -> 0
-    H.NodeF _ _ _ r -> succ r
+dec h = getSum (H.ran h) == spi h
 
 wef :: H.Heap a -> Bool
 wef = para $ \case
@@ -86,3 +95,6 @@ leftist = forAllShrink (hep :: Gen (H.Heap Int)) lil wef
 
 heap :: Property
 heap = forAllShrink (hep :: Gen (H.Heap Int)) lil hor
+
+size :: Property
+size = forAllShrink (hep :: Gen (H.Heap Int)) lil mos

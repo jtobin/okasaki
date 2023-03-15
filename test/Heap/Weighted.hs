@@ -4,13 +4,15 @@ module Heap.Weighted (
     bleftist
   , decorated
   , heap
+  , size
 
   , tests
   ) where
 
 import Control.Monad (foldM, replicateM)
 import Data.Fix (Fix(..))
-import Data.Functor.Foldable (project, para)
+import Data.Functor.Foldable (project, para, cata)
+import Data.Monoid
 import qualified Okasaki.Heap.Leftist.Weighted as H
 import Test.QuickCheck
 import Test.Tasty (TestTree)
@@ -21,11 +23,22 @@ tests = [
     testProperty "decorations accurate" decorated
   , testProperty "weight-biased leftist property invariant" bleftist
   , testProperty "heap order invariant" heap
+  , testProperty "correct right-spine length" size
   ]
 
 
 dec :: H.Heap a -> Bool
 dec h = H.siz h == H.wyt h
+
+spi :: H.Heap a -> Int
+spi = cata $ \case
+  H.LeafF         -> 0
+  H.NodeF _ _ _ r -> succ r
+
+mos :: H.Heap a -> Bool
+mos h =
+  let n = getSum (H.wyt h)
+  in  spi h <= floor (logBase 2 ((fromIntegral (succ n)) :: Double))
 
 wef :: H.Heap a -> Bool
 wef = para $ \case
@@ -85,3 +98,6 @@ bleftist = forAllShrink (hep :: Gen (H.Heap Int)) lil wef
 
 heap :: Property
 heap = forAllShrink (hep :: Gen (H.Heap Int)) lil hor
+
+size :: Property
+size = forAllShrink (hep :: Gen (H.Heap Int)) lil mos
