@@ -42,6 +42,16 @@ Test-suite tests
   hs-source-dirs:      test
   main-is:             Main.hs
   default-language:    Haskell2010
+  default-extensions:
+    DeriveFoldable
+    DeriveFunctor
+    DeriveTraversable
+    LambdaCase
+    RankNTypes
+    FlexibleInstances
+    TypeFamilies
+    TypeSynonymInstances
+    ViewPatterns
   other-modules:
      Heap.Leftist
    , Heap.Weighted
@@ -53,3 +63,5 @@ Test-suite tests
     , okasaki
     , QuickCheck
     , recursion-schemes
+    , tasty
+    , tasty-quickcheck

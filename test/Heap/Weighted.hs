@@ -1,13 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 module Heap.Weighted (
     bleftist
   , decorated
   , heap
+
+  , tests
   ) where
 
 import Control.Monad (foldM, replicateM)
@@ -15,6 +13,16 @@ import Data.Fix (Fix(..))
 import Data.Functor.Foldable (project, para)
 import qualified Okasaki.Heap.Leftist.Weighted as H
 import Test.QuickCheck
+import Test.Tasty (TestTree)
+import Test.Tasty.QuickCheck (testProperty)
+
+tests :: [TestTree]
+tests = [
+    testProperty "decorations accurate" decorated
+  , testProperty "weight-biased leftist property invariant" bleftist
+  , testProperty "heap order invariant" heap
+  ]
+
 
 dec :: H.Heap a -> Bool
 dec h = H.siz h == H.wyt h

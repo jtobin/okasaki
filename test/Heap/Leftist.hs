@@ -1,12 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 module Heap.Leftist (
-    leftist
+    decorated
+  , leftist
   , heap
+
+  , tests
   ) where
 
 import Control.Monad (foldM, replicateM)
@@ -14,12 +13,26 @@ import Data.Functor.Foldable (project, cata, para)
 import Data.Monoid
 import qualified Okasaki.Heap.Leftist as H
 import Test.QuickCheck
+import Test.Tasty (TestTree)
+import Test.Tasty.QuickCheck (testProperty)
 
-lef :: H.Heap a -> Bool
-lef h = getSum (H.ran h) == cata alg h where
+tests :: [TestTree]
+tests = [
+    testProperty "decorations accurate" decorated
+  , testProperty "leftist property invariant" leftist
+  , testProperty "heap order invariant" heap
+  ]
+
+dec :: H.Heap a -> Bool
+dec h = getSum (H.ran h) == cata alg h where
   alg = \case
     H.LeafF         -> 0
     H.NodeF _ _ _ r -> succ r
+
+wef :: H.Heap a -> Bool
+wef = para $ \case
+  H.LeafF -> True
+  H.NodeF _ _ (l, c) (r, d) -> H.ran l >= H.ran r && c && d
 
 hor :: Ord a => H.Heap a -> Bool
 hor = para $ \case
@@ -48,7 +61,7 @@ use a h = case a of
 
 hep :: (Ord k, Arbitrary k) => Gen (H.Heap k)
 hep = do
-  num  <- choose (0, 10)
+  num  <- choose (0, 1000)
   acts <- replicateM num act
   foldM (flip use) H.lef acts
 
@@ -65,8 +78,11 @@ instance (Ord k, Arbitrary k) => Arbitrary (H.Heap k) where
   arbitrary = hep
   shrink = lil
 
+decorated :: Property
+decorated = forAllShrink (hep :: Gen (H.Heap Int)) lil dec
+
 leftist :: Property
-leftist = forAllShrink (hep :: Gen (H.Heap Int)) lil lef
+leftist = forAllShrink (hep :: Gen (H.Heap Int)) lil wef
 
 heap :: Property
 heap = forAllShrink (hep :: Gen (H.Heap Int)) lil hor
