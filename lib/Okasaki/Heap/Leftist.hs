@@ -58,7 +58,7 @@ one x = Fix (NodeF 1 x lef lef)
 
 ran :: Heap a -> Sum Int
 ran h = case project h of
-  LeafF -> 0
+  LeafF -> mempty
   NodeF r _ _ _ -> r
 
 mer :: Ord a => Heap a -> Heap a -> Heap a
@@ -139,7 +139,7 @@ gas = hylo alg lag where
 wyt :: Heap a -> Int
 wyt = getSum . cata alg where
   alg = \case
-    LeafF -> 0
+    LeafF -> mempty
     NodeF _ _ l r -> 1 <> l <> r
 
 -- reference

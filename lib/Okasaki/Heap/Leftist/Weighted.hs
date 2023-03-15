@@ -48,12 +48,12 @@ one x = Fix (NodeF 1 x lef lef)
 
 siz :: Heap a -> Sum Int
 siz h = case project h of
-  LeafF -> 0
+  LeafF -> mempty
   NodeF r _ _ _ -> r
 
 wyt :: Heap a -> Sum Int
 wyt = cata $ \case
-  LeafF         -> 0
+  LeafF         -> mempty
   NodeF _ _ l r -> 1 <> l <> r
 
 mer :: Ord a => Heap a -> Heap a -> Heap a
