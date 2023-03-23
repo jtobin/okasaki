@@ -24,7 +24,8 @@ library
   other-modules:
     Okasaki.Orphans
   exposed-modules:
-      Okasaki.Heap.Leftist
+      Okasaki.Heap.Binomial
+    , Okasaki.Heap.Leftist
     , Okasaki.Heap.Leftist.Weighted
     , Okasaki.Map
     , Okasaki.Stack
