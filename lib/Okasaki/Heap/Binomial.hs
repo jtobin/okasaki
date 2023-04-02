@@ -1,17 +1,13 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-top-binds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Okasaki.Heap.Binomial where
 
 import Data.Eq.Deriving (deriveEq1)
 import Data.Fix hiding (cata, ana, hylo)
-import Data.Foldable (foldl')
-import Data.Functor.Base (NonEmptyF(..))
+import Data.Foldable (foldl', toList)
 import Data.Functor.Foldable
-import Data.List.NonEmpty (NonEmpty(..), (<|))
-import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty (NonEmpty(..))
 import Text.Show.Deriving
 
 data TreeF a r = NodeF !Int a [r]
@@ -40,28 +36,19 @@ lin s@(project -> NodeF r a c) t@(project -> NodeF q b d)
 ran :: Tree a -> Int
 ran (project -> NodeF r _ _) = r
 
--- arbitrary recursion
---
--- NB can't figure out how to express what seems like a very trivial recursion
---    scheme
---
---    we want to fold the list top-down and then recurse on the *entire*
---    folded list, not the rest of it.  i guess this is the issue.
---
-pet :: Ord a => Tree a -> Heap a -> Heap a
-pet a (Heap as) = Heap (loop a as) where
-  loop s ts = case ts of
-    [] -> pure s
-    (h : t)
-      | ran s < ran h -> s : ts
-      | otherwise     -> loop (lin s h) t
-
+-- top-down catamorphism
 put :: Ord a => a -> Heap a -> Heap a
-put a (Heap as) = pet a ((nod 0 a []) :| as)
+put a (Heap as) =
+    let l = cata alg as (nod 0 a [] :| as)
+    in  Heap (toList l)
+  where
+    alg l n@(t :| ts) = case l of
+      Nil -> n
+      Cons h f
+        | ran t < ran h -> n
+        | otherwise     -> f (lin t h :| drop 1 ts)
 
-poot :: Ord a => a -> Heap a -> Heap a
-poot a = pet (nod 0 a [])
-
+-- NB needs to be top-down
 mer :: Ord a => Heap a -> Heap a -> Heap a
 mer (Heap l) (Heap r) = Heap (apo lag (l, r)) where
   lag (p, q) = case (project p, project q) of
@@ -70,9 +57,43 @@ mer (Heap l) (Heap r) = Heap (apo lag (l, r)) where
     (Cons h s, Cons i t)
       | ran h < ran i -> Cons h (Right (s, r))
       | ran i < ran h -> Cons i (Right (l, t))
-      | otherwise     -> Cons (lin h i) (Right (s, t))
+      | otherwise     -> Cons (lin h i) (Right (s, t)) -- NB need 'put' call
       -- NB "pat (lin h i) (Right (s, t))"
       --
       --    pat has not been properly applied in the above case, but possible
       --    things are merged correctly.  test that ranks are strictly
       --    increasing, etc.
+
+mar :: Ord a => Heap a -> Heap a -> Heap a
+mar (Heap l) (Heap r) = case (l, r) of
+  ([], r) -> r
+  (l, []) -> l
+  _       -> undefined
+
+-- reference
+
+pet :: Ord a => Tree a -> Heap a -> Heap a
+pet a (Heap as) = Heap (loop a as) where
+  loop s ts = case ts of
+    [] -> pure s
+    (h : t)
+      | ran s < ran h -> s : ts
+      | otherwise     -> loop (lin s h) t
+
+pat :: Ord a => a -> Heap a -> Heap a
+pat a (Heap as) =
+    let l = foldl' alg (nod 0 a []) as
+        r = dropWhile (\t -> ran t <= ran l) as
+    in  Heap (l : r)
+  where
+    alg acc t
+      | ran acc < ran t = acc
+      | otherwise       = lin acc t
+
+-- test
+
+test0 :: Heap Int
+test0 = put 3 . put 2 . put 1 . put 0 $ lef
+
+test1 :: Heap Int
+test1 = put 4 test0

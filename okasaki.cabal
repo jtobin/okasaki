@@ -17,6 +17,7 @@ library
     DeriveTraversable
     LambdaCase
     RankNTypes
+    ScopedTypeVariables
     TypeFamilies
     ViewPatterns
   hs-source-dirs:
