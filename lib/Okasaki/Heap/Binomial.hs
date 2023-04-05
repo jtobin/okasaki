@@ -5,9 +5,10 @@ module Okasaki.Heap.Binomial where
 
 import Data.Eq.Deriving (deriveEq1)
 import Data.Fix hiding (cata, ana, hylo)
-import Data.Foldable (foldl', toList)
+import Data.Foldable (toList)
 import Data.Functor.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Maybe (fromMaybe)
 import Text.Show.Deriving
 
 data TreeF a r = NodeF !Int a [r]
@@ -36,59 +37,68 @@ lin s@(project -> NodeF r a c) t@(project -> NodeF q b d)
 ran :: Tree a -> Int
 ran (project -> NodeF r _ _) = r
 
--- top-down catamorphism
-put :: Ord a => a -> Heap a -> Heap a
-put a (Heap as) =
-    let l = cata alg as (nod 0 a [] :| as)
-    in  Heap (toList l)
+roo :: Tree a -> a
+roo (project -> NodeF _ a _) = a
+
+pet :: Ord a => Tree a -> [Tree a] -> [Tree a]
+pet a as = toList $ cata alg as (a :| as)
   where
     alg l n@(t :| ts) = case l of
       Nil -> n
       Cons h f
         | ran t < ran h -> n
-        | otherwise     -> f (lin t h :| drop 1 ts)
+        | otherwise     -> f $! lin t h :| drop 1 ts
 
--- NB needs to be top-down
+put :: Ord a => a -> Heap a -> Heap a
+put a (Heap as) = Heap $
+  pet (nod 0 a []) as
+
 mer :: Ord a => Heap a -> Heap a -> Heap a
-mer (Heap l) (Heap r) = Heap (apo lag (l, r)) where
-  lag (p, q) = case (project p, project q) of
-    (u, Nil) -> fmap Left u
-    (Nil, u) -> fmap Left u
-    (Cons h s, Cons i t)
-      | ran h < ran i -> Cons h (Right (s, r))
-      | ran i < ran h -> Cons i (Right (l, t))
-      | otherwise     -> Cons (lin h i) (Right (s, t)) -- NB need 'put' call
-      -- NB "pat (lin h i) (Right (s, t))"
-      --
-      --    pat has not been properly applied in the above case, but possible
-      --    things are merged correctly.  test that ranks are strictly
-      --    increasing, etc.
+mer (Heap a) (Heap b) = Heap $ mor a b where
+  mor l r = case (l, r) of
+    (p, []) -> p
+    ([], q) -> q
+    (h : t, i : s)
+      | ran h < ran i -> h : mor t r
+      | ran i < ran h -> i : mor l s
+      | otherwise     -> pet (lin h i) (mor t s)
 
-mar :: Ord a => Heap a -> Heap a -> Heap a
-mar (Heap l) (Heap r) = case (l, r) of
-  ([], r) -> r
-  (l, []) -> l
-  _       -> undefined
+out :: Ord a => Heap a -> Maybe (Tree a, Heap a)
+out (Heap as) = case as of
+  []       -> Nothing
+  (h : []) -> Just (h, lef)
+  (h : t)  -> do
+    (i, Heap s) <- out (Heap t)
+    pure $ if   roo h <= roo i
+           then (h, Heap t)
+           else (i, Heap (h:s))
+
+bot :: Ord a => Heap a -> Maybe a
+bot h = do
+  (a, _) <- out h
+  pure $ roo a
+
+-- exercise 3.5: direct bot
+bed :: Heap a -> Maybe a
+bed (Heap a) = case a of
+  []      -> Nothing
+  (h : _) -> Just (roo h)
+
+cut :: Ord a => Heap a -> Heap a
+cut h = fromMaybe lef $ do
+  (project -> NodeF _ _ s, t) <- out h
+  pure $ mer (Heap (reverse s)) t
 
 -- reference
 
-pet :: Ord a => Tree a -> Heap a -> Heap a
-pet a (Heap as) = Heap (loop a as) where
+-- arbitrary recursion
+pyt :: Ord a => Tree a -> Heap a -> Heap a
+pyt a (Heap as) = Heap (loop a as) where
   loop s ts = case ts of
     [] -> pure s
     (h : t)
       | ran s < ran h -> s : ts
       | otherwise     -> loop (lin s h) t
-
-pat :: Ord a => a -> Heap a -> Heap a
-pat a (Heap as) =
-    let l = foldl' alg (nod 0 a []) as
-        r = dropWhile (\t -> ran t <= ran l) as
-    in  Heap (l : r)
-  where
-    alg acc t
-      | ran acc < ran t = acc
-      | otherwise       = lin acc t
 
 -- test
 
