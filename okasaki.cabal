@@ -26,6 +26,7 @@ library
     Okasaki.Orphans
   exposed-modules:
       Okasaki.Heap.Binomial
+    , Okasaki.Heap.Class
     , Okasaki.Heap.Leftist
     , Okasaki.Heap.Leftist.Weighted
     , Okasaki.Map

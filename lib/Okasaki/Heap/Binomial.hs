@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-top-binds #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Okasaki.Heap.Binomial where
