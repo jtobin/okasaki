@@ -36,10 +36,8 @@ library
     , Okasaki.Tree.CPS
   build-depends:
       base
-    , comonad
     , data-fix
     , deriving-compat
-    , free
     , recursion-schemes
 
 Test-suite tests
