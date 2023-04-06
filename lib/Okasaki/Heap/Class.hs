@@ -24,6 +24,7 @@ instance Heap B.Heap where
   data Pile B.Heap a =
       Nib
     | Bin a (B.Heap a)
+    deriving Show
 
   via = \case
     B.Heap [] -> Nib
