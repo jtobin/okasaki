@@ -3,7 +3,7 @@
 
 module Okasaki.Heap.Leftist.Weighted (
     HeapF(..)
-  , Heap
+  , Heap(..)
 
   , lef
   , one
@@ -13,6 +13,8 @@ module Okasaki.Heap.Leftist.Weighted (
 
   , siz
   , wyt
+
+  , mer
 
   , oil
   , gas
@@ -38,35 +40,44 @@ data HeapF a r =
 $(deriveShow1 ''HeapF)
 $(deriveEq1 ''HeapF)
 
-type Heap a = Fix (HeapF a)
+type Slew a = Fix (HeapF a)
+
+newtype Heap a = Heap (Fix (HeapF a))
+  deriving Show
 
 lef :: Heap a
-lef = Fix LeafF
+lef = Heap (Fix LeafF)
+
+uno :: a -> Slew a
+uno x = Fix (NodeF 1 x (Fix LeafF) (Fix LeafF))
 
 one :: a -> Heap a
-one x = Fix (NodeF 1 x lef lef)
+one x = Heap (uno x)
 
 siz :: Heap a -> Sum Int
-siz h = case project h of
+siz (Heap h) = case project h of
   LeafF -> mempty
   NodeF r _ _ _ -> r
 
-wyt :: Heap a -> Sum Int
-wyt = cata $ \case
+tax :: Slew a -> Sum Int
+tax = cata $ \case
   LeafF         -> mempty
   NodeF _ _ l r -> 1 <> l <> r
 
+wyt :: Heap a -> Sum Int
+wyt (Heap h) = tax h
+
 mer :: Ord a => Heap a -> Heap a -> Heap a
-mer l r = apo lag (l, r) where
+mer (Heap l) (Heap r) = Heap (apo lag (l, r)) where
   lag (a, b) = case (project a, project b) of
     (c, LeafF) -> fmap Left c
     (LeafF, d) -> fmap Left d
     (NodeF p m c d, NodeF q n e f)
-      | m <= n && wyt c >= (wyt b <> wyt d) ->
+      | m <= n && tax c >= (tax b <> tax d) ->
           NodeF (p <> q) m (Left c) (Right (d, b))
       | m <= n ->
           NodeF (p <> q) m (Right (d, b)) (Left c)
-      | m > n && wyt e >= (wyt a <> wyt f) ->
+      | m > n && tax e >= (tax a <> tax f) ->
           NodeF (p <> q) n (Left e) (Right (a, f))
       | otherwise ->
           NodeF (p <> q) n (Right (a, f)) (Left e)
@@ -75,14 +86,14 @@ put :: Ord a => a -> Heap a -> Heap a
 put x = mer (one x)
 
 bot :: Heap a -> Maybe a
-bot h = case project h of
+bot (Heap h) = case project h of
   LeafF -> Nothing
   NodeF _ b _ _ -> Just b
 
 cut :: Ord a => Heap a -> Heap a
-cut h = case project h of
-  LeafF -> h
-  NodeF _ _ l r -> mer l r
+cut (Heap h) = case project h of
+  LeafF -> Heap h
+  NodeF _ _ l r -> mer (Heap l) (Heap r)
 
 data BinF a r =
     EmpF

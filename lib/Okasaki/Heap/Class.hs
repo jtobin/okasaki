@@ -6,9 +6,7 @@ import Data.Kind (Type)
 import Data.Fix (Fix(..))
 import qualified Okasaki.Heap.Binomial as B
 import qualified Okasaki.Heap.Leftist as L
-
--- NB needs to be newtyped to be made a proper instance
--- import qualified Okasaki.Heap.Leftist.Weighted as W
+import qualified Okasaki.Heap.Leftist.Weighted as W
 
 -- exercise 3.7: generic explicit-min heap
 class Heap (h :: Type -> Type) where
@@ -100,4 +98,44 @@ instance Heap L.Heap where
   out = \case
     Nil -> L.lef
     Lib _ h -> h
+
+instance Heap W.Heap where
+  data Pile W.Heap a =
+      Net
+    | Win a (W.Heap a)
+    deriving Show
+
+  via = \case
+    W.Heap (Fix W.LeafF) -> Net
+    h -> let b = W.bot h
+         in  case b of
+               Nothing -> Net
+               Just a  -> Win a h
+
+  bot = \case
+    Net     -> Nothing
+    Win a _ -> Just a
+
+  put a = \case
+    Net -> Win a (W.put a W.lef)
+    Win m h
+      | a < m     -> Win a (W.put a h)
+      | otherwise -> Win m (W.put a h)
+
+  cut h = case h of
+    Net -> Net
+    Win _ t ->
+      let c = W.cut t
+      in  case W.bot c of
+            Nothing -> Net
+            Just a  -> Win a c
+
+  mer h l = case (h, l) of
+    (Net, _) -> l
+    (_, Net) -> h
+    (Win a s, Win b t) -> Win (min a b) (W.mer s t)
+
+  out = \case
+    Net -> W.lef
+    Win _ h -> h
 
