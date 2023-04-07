@@ -3,7 +3,7 @@
 
 module Okasaki.Heap.Leftist (
     HeapF(..)
-  , Heap
+  , Heap(..)
 
   , lef
   , one
@@ -16,6 +16,7 @@ module Okasaki.Heap.Leftist (
   , sor
   , set
   , ran
+  , mer
 
   , oil
   , gas
@@ -48,72 +49,83 @@ data HeapF a r =
 $(deriveShow1 ''HeapF)
 $(deriveEq1 ''HeapF)
 
-type Heap a = Fix (HeapF a)
+type Slew a = Fix (HeapF a)
+
+newtype Heap a = Heap (Slew a)
+  deriving Show
 
 lef :: Heap a
-lef = Fix LeafF
+lef = Heap (Fix LeafF)
+
+uno :: a -> Slew a
+uno x = Fix (NodeF 1 x (Fix LeafF) (Fix LeafF))
 
 one :: a -> Heap a
-one x = Fix (NodeF 1 x lef lef)
+one x = Heap (uno x)
 
-ran :: Heap a -> Sum Int
-ran h = case project h of
+nar :: Slew a -> Sum Int
+nar h = case project h of
   LeafF -> mempty
   NodeF r _ _ _ -> r
+
+ran :: Heap a -> Sum Int
+ran (Heap h) = nar h
 
 mer :: Ord a => Heap a -> Heap a -> Heap a
 mer l = sor . mix l
 
 mix :: Ord a => Heap a -> Heap a -> Heap a
-mix l r = apo lag (l, r) where
+mix (Heap l) (Heap r) = Heap (apo lag (l, r)) where
   lag (a, b) = case (project a, project b) of
     (c, LeafF) -> fmap Left c
     (LeafF, d) -> fmap Left d
     (NodeF _ m c d, NodeF _ n e f)
-      | m <= n    -> NodeF (ran d <> ran b) m (Left c) (Right (d, b))
-      | otherwise -> NodeF (ran a <> ran f) n (Left e) (Right (a, f))
+      | m <= n    -> NodeF (nar d <> nar b) m (Left c) (Right (d, b))
+      | otherwise -> NodeF (nar a <> nar f) n (Left e) (Right (a, f))
 
 sor :: Heap a -> Heap a
-sor = cata $ \case
-  LeafF -> lef
-  NodeF _ m l r -> set m l r
+sor (Heap h) = Heap (cata alg h) where
+  alg = \case
+    LeafF -> Fix LeafF
+    NodeF _ m l r -> set m l r
 
-set :: a -> Heap a -> Heap a -> Heap a
+set :: a -> Slew a -> Slew a -> Slew a
 set m l r
-  | ran l >= ran r = Fix (NodeF (1 <> ran r) m l r)
-  | otherwise      = Fix (NodeF (1 <> ran l) m r l)
+  | nar l >= nar r = Fix (NodeF (1 <> nar r) m l r)
+  | otherwise      = Fix (NodeF (1 <> nar l) m r l)
 
 put :: Ord a => a -> Heap a -> Heap a
 put x = mer (one x)
 
 -- exercise 3.2: direct insert
 pat :: Ord a => a -> Heap a -> Heap a
-pat x h = case project h of
-    LeafF -> one x
+pat p (Heap t) = Heap (pet p t) where
+  pet x h = case project h of
+    LeafF -> uno x
     NodeF _ m a b ->
       let (u, l)
             | x <= m    = (x, m)
             | otherwise = (m, x)
 
       in  uncurry (set u) (pot l a b)
-  where
-    pot :: Ord a => a -> Heap a -> Heap a -> (Heap a, Heap a)
-    pot l a b = case (project a, project b) of
-      (_, LeafF) -> (a, one l)
-      (LeafF, _) -> (b, one l)
-      (NodeF _ c _ _, NodeF _ d _ _)
-        | c > d     -> (pat l a, b)
-        | otherwise -> (a, pat l b)
+
+  pot :: Ord a => a -> Slew a -> Slew a -> (Slew a, Slew a)
+  pot l a b = case (project a, project b) of
+    (_, LeafF) -> (a, uno l)
+    (LeafF, _) -> (b, uno l)
+    (NodeF _ c _ _, NodeF _ d _ _)
+      | c > d     -> (pet l a, b)
+      | otherwise -> (a, pet l b)
 
 bot :: Heap a -> Maybe a
-bot h = case project h of
+bot (Heap h) = case project h of
   LeafF -> Nothing
   NodeF _ b _ _ -> Just b
 
 cut :: Ord a => Heap a -> Heap a
-cut h = case project h of
-  LeafF -> h
-  NodeF _ _ l r -> mer l r
+cut (Heap h) = case project h of
+  LeafF -> Heap h
+  NodeF _ _ l r -> mer (Heap l) (Heap r)
 
 -- exercise 3.3: hylo gas
 data BinF a r =
@@ -136,34 +148,16 @@ gas = hylo alg lag where
     SinF a   -> one a
     BinF l r -> mer l r
 
-wyt :: Heap a -> Int
-wyt = getSum . cata alg where
-  alg = \case
-    LeafF -> mempty
-    NodeF _ _ l r -> 1 <> l <> r
-
--- reference
-
-nodF :: a -> Heap a -> Heap a -> HeapF a (Heap a)
-nodF x l r
-  | ran l >= ran r = NodeF (1 <> ran r) x l r
-  | otherwise      = NodeF (1 <> ran l) x r l
-
-nod :: a -> Heap a -> Heap a -> Heap a
-nod x l r = Fix (nodF x l r)
-
-mux :: Ord a => Heap a -> Heap a -> Heap a
-mux l r = case (project l, project r) of
-  (_, LeafF) -> l
-  (LeafF, _) -> r
-  (NodeF _ m a b, NodeF _ n c d)
-    | m <= n    -> nod m a (mux b r)
-    | otherwise -> nod n c (mux l d)
-
 oil :: Ord a => [a] -> Heap a
 oil = cata $ \case
   Nil      -> lef
   Cons h t -> put h t
+
+wyt :: Heap a -> Int
+wyt (Heap h) = getSum (cata alg h) where
+  alg = \case
+    LeafF -> mempty
+    NodeF _ _ l r -> 1 <> l <> r
 
 -- test
 

@@ -3,10 +3,11 @@
 module Okasaki.Heap.Class where
 
 import Data.Kind (Type)
+import Data.Fix (Fix(..))
 import qualified Okasaki.Heap.Binomial as B
+import qualified Okasaki.Heap.Leftist as L
 
--- NB these need to be newtyped to be made proper instances
--- import qualified Okasaki.Heap.Leftist as L
+-- NB needs to be newtyped to be made a proper instance
 -- import qualified Okasaki.Heap.Leftist.Weighted as W
 
 -- exercise 3.7: generic explicit-min heap
@@ -59,4 +60,44 @@ instance Heap B.Heap where
   out = \case
     Nib -> B.lef
     Bin _ h -> h
+
+instance Heap L.Heap where
+  data Pile L.Heap a =
+      Nil
+    | Lib a (L.Heap a)
+    deriving Show
+
+  via = \case
+    L.Heap (Fix L.LeafF) -> Nil
+    h -> let b = L.bot h
+         in  case b of
+               Nothing -> Nil
+               Just a  -> Lib a h
+
+  bot = \case
+    Nil     -> Nothing
+    Lib a _ -> Just a
+
+  put a = \case
+    Nil -> Lib a (L.put a L.lef)
+    Lib m h
+      | a < m     -> Lib a (L.put a h)
+      | otherwise -> Lib m (L.put a h)
+
+  cut h = case h of
+    Nil -> Nil
+    Lib _ t ->
+      let c = L.cut t
+      in  case L.bot c of
+            Nothing -> Nil
+            Just a  -> Lib a c
+
+  mer h l = case (h, l) of
+    (Nil, _) -> l
+    (_, Nil) -> h
+    (Lib a s, Lib b t) -> Lib (min a b) (L.mer s t)
+
+  out = \case
+    Nil -> L.lef
+    Lib _ h -> h
 
